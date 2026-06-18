@@ -16,9 +16,11 @@ export default defineConfig({
   
  
   use: {
+    
     trace: 'on-first-retry',
     testIdAttribute:'data-test',
     baseURL: 'https://www.saucedemo.com/',
+    
   },
 
 
