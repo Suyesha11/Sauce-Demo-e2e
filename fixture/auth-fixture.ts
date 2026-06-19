@@ -1,8 +1,9 @@
 import {test as base, Page} from "@playwright/test";
 import { LoginPage } from "../pages/LoginPage";
-import { users } from "../test-data/users"
+import { users } from "../test-data/users";
+import { userDetails } from "../utils/userDetails";
 
-type CartFixture={
+type PageWithProduct ={
     page:Page;
     productName:string;
     productPrice:string;
@@ -12,7 +13,8 @@ type AuthFixtures={
     loginAsStandardUser:Page;
     loginAsProblemUser:Page;
     loginAsVisualUser:Page;
-    addedproductToCart:CartFixture;
+    addedproductToCart:PageWithProduct ;
+    checkoutProduct:PageWithProduct ;
 };
 
 
@@ -55,6 +57,19 @@ export const test = base.extend<AuthFixtures>({
         await page.waitForURL(/cart\.html/);
 
         await use({page , productName , productPrice});
+    },
+
+    checkoutProduct:async({addedproductToCart},use)=>{
+        const {page, productName, productPrice }=addedproductToCart;
+        await page.getByRole('button',{name:"Checkout"}).click();
+        await page.waitForURL(/checkout-step-one\.html/);
+        await page.getByTestId("firstName").fill(userDetails.firstName);
+        await page.getByTestId("lastName").fill(userDetails.lastName);
+        await page.getByTestId("postalCode").fill(userDetails.postalCode);
+        await page.getByRole('button',{name:"Continue"}).click();
+        await page.waitForURL(/checkout-step-two\.html/);
+
+        await use({page, productName, productPrice });
     }
 
 })

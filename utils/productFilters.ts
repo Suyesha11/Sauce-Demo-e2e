@@ -3,6 +3,4 @@ export const productFilters = {
     descendingName:"Name (Z to A)",
     ascendingPrice:"Price (low to high)",
     descendingPrice:"Price (high to low)"
-
-
 }
