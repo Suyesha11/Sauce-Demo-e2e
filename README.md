@@ -21,27 +21,36 @@ A professional end-to-end test automation suite for [SauceDemo](https://www.sauc
 
 ```
 sauce-demo-e2e/
-├── .github/                      # GitHub Actions CI workflow
-├── tests/                        # Test spec files
-│   ├── login.spec.ts             # Login feature tests
-│   └── ProductPage.spec.ts       # Products page tests
-├── pages/                        # Page Object Model classes
-│   ├── LoginPage.ts              # Login page locators and actions
-│   └── ProductPage.ts            # Products page locators and actions
-├── fixtures/                     # Custom Playwright fixtures
-│   └── auth-fixture.ts           # Authenticated session fixtures per user
-├── test-data/                    # Test data
-│   └── users.ts                  # User credentials loaded from .env
-├── types/                        # TypeScript interfaces
-│   └── index.ts                  # User type definition
-├── utils/                        # Constants and helpers
-│   ├── constant.ts               # Expected error messages
-│   └── productFilters.ts         # Product sort filter labels
-├── .env                          # Local credentials (gitignored)
-├── .env.example                  # Template for required environment variables
-├── playwright.config.ts          # Playwright configuration
-├── TEST_PLAN.md                  # Formal test plan document
-├── tsconfig.json                 # TypeScript configuration
+├── .github/                          # GitHub Actions CI workflow
+├── tests/                            # Test spec files
+│   ├── AllLogins.spec.ts             # Login feature tests
+│   ├── ProductPage.spec.ts           # Products page tests
+│   ├── CartPage.spec.ts              # Cart page tests
+│   ├── CheckoutPage.spec.ts          # Checkout step 1 tests
+│   ├── CheckoutPageOverview.spec.ts  # Checkout overview tests
+│   └── OrderConfirmation.spec.ts     # Order confirmation tests
+├── pages/                            # Page Object Model classes
+│   ├── LoginPage.ts                  # Login page locators and actions
+│   ├── ProductPage.ts                # Products page locators and actions
+│   ├── CartPage.ts                   # Cart page locators and actions
+│   ├── CheckoutPage.ts               # Checkout step 1 locators and actions
+│   ├── CheckoutOverviewPage.ts       # Checkout overview locators and actions
+│   └── OrderConfirmationPage.ts      # Order confirmation locators and actions
+├── fixtures/                         # Custom Playwright fixtures
+│   └── auth-fixture.ts               # Authenticated session fixtures per user
+├── test-data/                        # Test data
+│   └── users.ts                      # User credentials loaded from .env
+├── types/                            # TypeScript interfaces
+│   └── index.ts                      # User and fixture type definitions
+├── utils/                            # Constants and helpers
+│   ├── constant.ts                   # Expected error messages
+│   ├── productFilters.ts             # Product sort filter labels
+│   └── userDetails.ts                # Checkout form test data
+├── .env                              # Local credentials (gitignored)
+├── .env.example                      # Template for required environment variables
+├── playwright.config.ts              # Playwright configuration
+├── TEST_PLAN.md                      # Formal test plan document
+├── tsconfig.json                     # TypeScript configuration
 └── package.json
 ```
 
@@ -69,7 +78,7 @@ npm install
 
 **3. Install Playwright browsers**
 ```bash
-npx playwright install
+npx playwright install chromium
 ```
 
 **4. Set up environment variables**
@@ -109,8 +118,12 @@ npx playwright test --headed
 
 **Run a specific spec file**
 ```bash
-npx playwright test tests/login.spec.ts
+npx playwright test tests/AllLogins.spec.ts
 npx playwright test tests/ProductPage.spec.ts
+npx playwright test tests/CartPage.spec.ts
+npx playwright test tests/CheckoutPage.spec.ts
+npx playwright test tests/CheckoutPageOverview.spec.ts
+npx playwright test tests/OrderConfirmation.spec.ts
 ```
 
 **Run a specific test by name**
@@ -127,7 +140,9 @@ npx playwright show-report
 
 ## Test Coverage
 
-### Login (`login.spec.ts`) - 11 tests
+**Total: 40 tests | 6 feature areas | 100% passing in CI**
+
+### Login (`AllLogins.spec.ts`) -> 11 tests
 
 | Scenario | Type |
 |----------|------|
@@ -143,7 +158,7 @@ npx playwright show-report
 | Both fields empty show error message | Edge case |
 | Direct URL access without login is blocked | Security |
 
-### Products Page (`ProductPage.spec.ts`)- 10 tests
+### Products Page (`ProductPage.spec.ts`) -> 10 tests
 
 | Scenario | Type |
 |----------|------|
@@ -159,15 +174,58 @@ npx playwright show-report
 | Adding multiple products updates badge count | Functional |
 | Problem user sees identical images (known bug) | Bug verification |
 
+### Cart Page (`CartPage.spec.ts`) -> 5 tests
+
+| Scenario | Type |
+|----------|------|
+| Cart displays correct product name as added | Functional |
+| Cart displays correct product price as added | Functional |
+| Proceed to checkout navigates correctly | Navigation |
+| Continue shopping navigates back to inventory | Navigation |
+| Remove product clears cart items | Functional |
+
+### Checkout Step 1 (`CheckoutPage.spec.ts`) -> 5 tests
+
+| Scenario | Type |
+|----------|------|
+| Successfully fill all fields and proceed | Happy path |
+| Cancel returns to cart page | Navigation |
+| Missing first name shows error message | Negative |
+| Missing last name shows error message | Negative |.
+| Missing postal code shows error message | Negative |
+
+### Checkout Overview (`CheckoutPageOverview.spec.ts`) -> 5 tests
+
+| Scenario | Type |
+|----------|------|
+| Payment and shipping info labels are visible | Functional |
+| Correct product name displayed in overview | Functional |
+| Correct product price displayed in overview | Functional |
+| Total price matches item total plus tax | Functional |
+| Cancel navigates back to inventory | Navigation |
+| Finish navigates to confirmation page | Navigation |
+
+### Order Confirmation (`OrderConfirmation.spec.ts`) -> 4 tests
+
+| Scenario | Type |
+|----------|------|
+| Thank you message is displayed | Functional |
+| Checkout complete header is visible | Functional |
+| Back Home button navigates to inventory | Navigation |
+| Cart badge is not visible after purchase | Functional |
+
 ---
 
 ## Design Decisions
 
 **Page Object Model (POM)**
-All locators and page interactions are encapsulated in Page Object classes under `pages/`. Tests never reference `data-test` attributes directly - they call methods on Page Objects. This separates test logic from implementation details, making the suite easier to maintain when the UI changes.
+All locators and page interactions are encapsulated in Page Object classes under `pages/`. Tests never reference `data-test` attributes directly, they call methods on Page Objects. This separates test logic from implementation details, making the suite easier to maintain when the UI changes.
 
-**Custom Fixtures**
-Rather than repeating login steps in every test that requires authentication, custom Playwright fixtures in `fixtures/auth-fixture.ts` handle login per user type. Tests simply destructure the fixture they need in `beforeEach` and receive an already-authenticated page.
+**Custom Fixtures with Composition**
+Rather than repeating setup steps in every test, custom Playwright fixtures in `fixtures/auth-fixture.ts` handle authentication and navigation per user type. Fixtures are composed where `checkoutProduct` builds on `addedproductToCart` which builds on `loginAsStandardUser`, so each fixture is lean and reusable across multiple spec files.
+
+**Dynamic Test Data Flow**
+Product name and price are read from the inventory page inside fixtures and passed through to cart, checkout and overview specs. This means assertions compare real application data against real application data, no hardcoded expected values.
 
 **Typed Test Data**
 User credentials are typed using a `User` interface from `types/index.ts` and loaded from environment variables via `test-data/users.ts`. This ensures credentials are never hardcoded in test files and are consistent across the suite.
@@ -182,7 +240,14 @@ Credentials are loaded from a `.env` file using `dotenv` and are gitignored. A `
 
 ## CI/CD
 
-This project includes a GitHub Actions workflow that runs the full test suite on every push and pull request to `main`. The workflow installs dependencies, installs Playwright browsers, and runs all tests in headless mode.
+This project includes a GitHub Actions workflow that runs the full test suite on every push and pull request to `main`. The workflow:
+
+- Runs on `ubuntu-latest`
+- Installs only Chromium browser (faster than full install)
+- Caches Playwright browsers using `package-lock.json` hash as cache key which skips browser download on subsequent runs
+- Injects credentials securely via GitHub Secrets
+- Uploads HTML test report as a downloadable artifact on every run
+- Completes in under 20 seconds with browser cache hit
 
 ---
 
@@ -196,5 +261,5 @@ This project includes a GitHub Actions workflow that runs the full test suite on
 
 ## Author
 
-**Suyesha Patil** - Quality Assurance Engineer  
+**Suyesha Patil** - Quality Assurance Engineer
 [GitHub](https://github.com/Suyesha11/Sauce-Demo-e2e)
